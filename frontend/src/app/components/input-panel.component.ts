@@ -8,25 +8,29 @@ import { CommonModule } from '@angular/common';
   imports: [FormsModule, CommonModule],
   template: `
     <div class="d-flex flex-column h-100">
-      <label for="input" class="form-label fw-semibold text-secondary small d-flex align-items-center gap-1 mb-2">
-        <i class="bi bi-keyboard-fill"></i> Provide Execution Parameters (stdin)
-      </label>
+      <div class="text-secondary small font-monospace mb-2 fs-6"><i class="bi bi-keyboard"></i> Input (stdin):</div>
       <textarea
-        id="input"
-        class="form-control flex-grow-1 font-monospace p-3 border rounded shadow-inner"
+        class="form-control flex-grow-1 font-monospace p-3 custom-textarea"
         [value]="input"
         (input)="onInputChange($event)"
-        placeholder="Type test inputs here, then click Run..."
-        style="font-size: 13px; min-height: 420px; resize: none;"></textarea>
+        placeholder="Type test strings here..."
+        style="font-size: 15px; resize: none;"></textarea>
     </div>
-  `
+  `,
+  styles: [`
+    :host { display: block; height: 100%; }
+    .custom-textarea {
+      background-color: var(--bs-body-bg) !important;
+      color: var(--bs-body-color) !important;
+      border: 1px solid var(--bs-border-color);
+    }
+  `]
 })
 export class InputPanelComponent {
   @Input() input: string = '';
   @Output() inputChanged = new EventEmitter<string>();
 
   onInputChange(event: any) {
-    this.input = event.target.value;
-    this.inputChanged.emit(this.input);
+    this.inputChanged.emit(event.target.value);
   }
 }

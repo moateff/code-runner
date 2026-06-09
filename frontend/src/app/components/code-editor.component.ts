@@ -5,20 +5,16 @@ import monacoLoader from '@monaco-editor/loader';
   selector: 'app-code-editor',
   standalone: true,
   template: `
-    <div class="mb-2">
-      <div class="d-flex align-items-center justify-content-between mb-2">
-        <span class="text-secondary small fw-semibold d-flex align-items-center gap-1">
-          <i class="bi bi-code-slash"></i> Workspace Source Code
-        </span>
-      </div>
-      <div #editorContainer class="border rounded shadow-inner overflow-hidden" style="height: 420px; width: 100%;"></div>
-    </div>
-  `
+    <div #editorContainer class="w-100 h-100 m-0 p-0"></div>
+  `,
+  styles: [`
+    :host { display: block; width: 100%; height: 100%; }
+  `]
 })
 export class CodeEditorComponent implements AfterViewInit, OnChanges {
   @Input() language: string = 'cpp';
   @Input() code: string = '';
-  @Input() theme: 'light' | 'dark' = 'dark'; // 🌟 Accepts global application mode state values
+  @Input() theme: 'light' | 'dark' = 'dark';
   @Output() codeChanged = new EventEmitter<string>();
 
   @ViewChild('editorContainer') editorContainer?: ElementRef;
@@ -34,33 +30,31 @@ export class CodeEditorComponent implements AfterViewInit, OnChanges {
       this.editor = monaco.editor.create(this.editorContainer!.nativeElement, {
         value: this.code || this.getDefaultCode(),
         language: this.getMonacoLanguage(this.language),
-        theme: this.theme === 'dark' ? 'vs-dark' : 'vs', // 🌟 Sets Monaco matching template canvas look
+        theme: this.theme === 'dark' ? 'vs-dark' : 'vs',
         automaticLayout: true,
         minimap: { enabled: false },
-        fontSize: 14,
+        fontSize: 16,
+        fontFamily: "'Fira Code', Consolas, Monaco, monospace",
         tabSize: 4,
         wordWrap: 'on',
-        padding: { top: 8, bottom: 8 }
+        lineHeight: 24,
+        padding: { top: 12, bottom: 12 }
       });
 
       this.editor.onDidChangeModelContent(() => {
-        const content = this.editor.getValue();
-        this.codeChanged.emit(content);
+        this.codeChanged.emit(this.editor.getValue());
       });
     });
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    // Dynamically adjust Monaco Theme canvas view layout rules during runtime switches
     if (this.editor && this.monacoInstance && changes['theme']) {
-      const monacoThemeName = changes['theme'].currentValue === 'dark' ? 'vs-dark' : 'vs';
-      this.monacoInstance.editor.setTheme(monacoThemeName);
+      this.monacoInstance.editor.setTheme(changes['theme'].currentValue === 'dark' ? 'vs-dark' : 'vs');
     }
 
     if (this.editor && this.monacoInstance && changes['language']) {
       const model = this.editor.getModel();
-      const newLanguage = this.getMonacoLanguage(this.language);
-      this.monacoInstance.editor.setModelLanguage(model, newLanguage);
+      this.monacoInstance.editor.setModelLanguage(model, this.getMonacoLanguage(this.language));
 
       if (!this.editor.getValue() || this.editor.getValue() === this.getDefaultCodeForLang(changes['language'].previousValue)) {
         this.editor.setValue(this.getDefaultCode());
@@ -69,15 +63,10 @@ export class CodeEditorComponent implements AfterViewInit, OnChanges {
     }
 
     if (this.editor && changes['code'] && !changes['code'].isFirstChange()) {
-      const currentExternalValue = changes['code'].currentValue;
-      if (this.editor.getValue() !== currentExternalValue) {
-        this.editor.setValue(currentExternalValue || this.getDefaultCode());
+      if (this.editor.getValue() !== changes['code'].currentValue) {
+        this.editor.setValue(changes['code'].currentValue || this.getDefaultCode());
       }
     }
-  }
-
-  getCode(): string {
-    return this.editor ? this.editor.getValue() : '';
   }
 
   private getMonacoLanguage(language: string): string {
@@ -87,7 +76,7 @@ export class CodeEditorComponent implements AfterViewInit, OnChanges {
 
   private getDefaultCodeForLang(lang: string): string {
     const templates: { [key: string]: string } = {
-      cpp: `#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}`,
+      cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}`,
       python: `print("Hello, World!")`,
       java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}`
     };

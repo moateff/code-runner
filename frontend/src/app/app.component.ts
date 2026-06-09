@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, ViewChild, Renderer2, Inject } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { LanguageSelectorComponent } from './components/language-selector.component';
 import { CodeEditorComponent } from './components/code-editor.component';
 import { InputPanelComponent } from './components/input-panel.component';
@@ -14,88 +15,181 @@ import { RunRequest } from './models/run-request';
   imports: [
     CommonModule,
     HttpClientModule,
+    FormsModule,
     LanguageSelectorComponent,
     CodeEditorComponent,
     InputPanelComponent,
     OutputPanelComponent
   ],
   template: `
-    <div class="container-fluid py-4 min-vh-100 transition-all">
-      <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-        <h1 class="h2 m-0 fw-bold">
-          <i class="bi bi-terminal-box me-2 text-primary"></i>Online Code Compiler
-        </h1>
+    <div class="d-flex flex-column vh-100 overflow-hidden font-sans">
 
-        <button class="btn btn-outline-secondary d-flex align-items-center gap-2" (click)="toggleTheme()">
-          <i class="bi" [ngClass]="currentTheme === 'light' ? 'bi-moon-fill' : 'bi-sun-fill'"></i>
-          <span>{{ currentTheme === 'light' ? 'Dark Mode' : 'Light Mode' }}</span>
-        </button>
-      </div>
+      <header class="d-flex align-items-center justify-content-between px-3 custom-tab-bar border-bottom" style="height: 50px;">
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-success fw-bold fs-4">&lt;/&gt;</span>
+          <span class="fw-bold fs-5 tracking-tight text-white font-monospace">OneCompiler</span>
+        </div>
 
-      <div class="row g-4">
-        <div class="col-lg-8">
-          <div class="card shadow-sm p-3 mb-4">
-            <div class="row align-items-end g-2 mb-3">
-              <div class="col-sm-6 col-md-4">
-                <app-language-selector
-                  [selectedLanguage]="selectedLanguage"
-                  (languageChanged)="onLanguageChanged($event)">
-                </app-language-selector>
+        <div class="d-flex align-items-center gap-3">
+          <app-language-selector
+            [selectedLanguage]="selectedLanguage"
+            (languageChanged)="onLanguageChanged($event)">
+          </app-language-selector>
+
+          <button
+            class="btn text-dark fw-bold d-flex align-items-center justify-content-center gap-2 px-4 rounded-pill shadow-sm run-btn"
+            (click)="runCode()"
+            [disabled]="isRunning">
+            <i class="bi" [ngClass]="isRunning ? 'bi-arrow-repeat spin' : 'bi-play-fill fs-4'"></i>
+            <span>{{ isRunning ? 'Running...' : 'Run' }}</span>
+          </button>
+        </div>
+
+        <div class="d-flex align-items-center">
+          <button
+            class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center px-2 border-0 shadow-none text-secondary"
+            style="height: 32px;"
+            (click)="toggleTheme()"
+            title="Toggle Light/Dark Workspace Mode">
+            <i class="bi fs-5" [ngClass]="currentTheme === 'light' ? 'bi-moon-stars-fill' : 'bi-sun-fill text-warning'"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="d-flex flex-grow-1 overflow-hidden position-relative">
+        <main class="d-flex flex-grow-1 row m-0 p-0 w-100 overflow-hidden">
+
+          <section class="col-md-7 p-0 h-100 d-flex flex-column border-end custom-editor-section">
+            <div class="d-flex align-items-center px-2 custom-tab-bar" style="height: 35px;">
+              <div class="active-code-tab px-3 h-100 d-flex align-items-center gap-2 font-monospace fs-6">
+                <i class="bi bi-file-earmark-code text-primary"></i> {{ getSourceFileName(selectedLanguage) }}
               </div>
             </div>
 
-            <app-code-editor
-              [language]="selectedLanguage"
-              [code]="code"
-              [theme]="currentTheme"
-              (codeChanged)="onCodeChanged($event)"
-              #codeEditor>
-            </app-code-editor>
+            <div class="flex-grow-1 w-100 overflow-hidden">
+              <app-code-editor
+                [language]="selectedLanguage"
+                [code]="code"
+                [theme]="currentTheme"
+                (codeChanged)="onCodeChanged($event)"
+                #codeEditor>
+              </app-code-editor>
+            </div>
+          </section>
 
-            <button
-              class="btn btn-primary btn-lg w-100 shadow-sm mt-2 d-flex align-items-center justify-content-center gap-2"
-              (click)="runCode()"
-              [disabled]="isRunning">
-              <span *ngIf="!isRunning" class="d-flex align-items-center gap-2">
-                <i class="bi bi-play-fill fs-5"></i> Run Code
-              </span>
-              <span *ngIf="isRunning" class="d-flex align-items-center gap-2">
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                Running Execution Lifecycle...
-              </span>
-            </button>
-          </div>
-        </div>
+          <section class="col-md-5 p-0 h-100 d-flex flex-column overflow-hidden custom-console-section">
 
-        <div class="col-lg-4">
-          <div class="card shadow-sm p-3 h-100">
-            <app-input-panel
-              [input]="input"
-              (inputChanged)="onInputChanged($event)">
-            </app-input-panel>
-          </div>
-        </div>
+            <div class="border-bottom d-flex align-items-center justify-content-between px-2 custom-tab-bar" style="height: 35px;">
+              <ul class="nav nav-tabs border-0 font-monospace h-100 align-items-end" style="font-size: 14px;">
+                <li class="nav-item h-100">
+                  <button class="nav-link tab-btn h-100" [ngClass]="{'active-terminal-tab': activeTab === 'output'}" (click)="activeTab = 'output'">
+                    <i class="bi bi-terminal me-1"></i> Console
+                  </button>
+                </li>
+                <li class="nav-item h-100">
+                  <button class="nav-link tab-btn h-100" [ngClass]="{'active-terminal-tab': activeTab === 'input'}" (click)="activeTab = 'input'">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> I/O
+                  </button>
+                </li>
+              </ul>
+
+              <div class="text-muted font-monospace px-2 fs-7" *ngIf="executionTimeMs > 0">
+                <i class="bi bi-stopwatch text-warning me-1"></i>{{ executionTimeMs }}ms
+              </div>
+            </div>
+
+            <div class="flex-grow-1 p-3 overflow-hidden position-relative custom-terminal-body">
+              <div class="h-100 overflow-hidden" [hidden]="activeTab !== 'output'">
+                <app-output-panel
+                  [stdout]="stdout"
+                  [stderr]="stderr"
+                  [exitCode]="exitCode"
+                  [executionTimeMs]="executionTimeMs">
+                </app-output-panel>
+              </div>
+
+              <div class="h-100 overflow-hidden" [hidden]="activeTab !== 'input'">
+                <app-input-panel
+                  [input]="input"
+                  (inputChanged)="onInputChanged($event)">
+                </app-input-panel>
+              </div>
+            </div>
+          </section>
+
+        </main>
       </div>
 
-      <div class="mt-4">
-        <app-output-panel
-          [stdout]="stdout"
-          [stderr]="stderr"
-          [exitCode]="exitCode"
-          [executionTimeMs]="executionTimeMs">
-        </app-output-panel>
-      </div>
-
-      <div *ngIf="errorMessage" class="alert alert-danger mt-3 d-flex align-items-center gap-2 shadow-sm" role="alert">
-        <i class="bi bi-exclamation-triangle-fill"></i>
+      <div *ngIf="errorMessage" class="position-fixed bottom-0 end-0 m-3 alert alert-danger shadow-lg d-flex align-items-center gap-2 border-0 fs-5" style="z-index: 999; background-color: #d32f2f; color: #fff;" role="alert">
+        <i class="bi bi-exclamation-octagon-fill"></i>
         <div>{{ errorMessage }}</div>
+        <button type="button" class="btn-close btn-close-white small ms-2" (click)="errorMessage = ''"></button>
       </div>
+
     </div>
   `,
   styles: [`
-    :host {
-      display: block;
-      transition: background-color 0.25s ease;
+    .spin { animation: rotation 0.8s infinite linear; }
+    @keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .font-sans { font-family: system-ui, -apple-system, sans-serif; }
+    .tracking-tight { letter-spacing: -0.5px; }
+    .fs-7 { font-size: 12px; }
+
+    /* ─── DYNAMIC CLASS HOOK THEME DESIGN VARIABLES ─── */
+    :host-context([data-bs-theme="dark"]) {
+      --bg-tab-bar: #18181c;
+      --bg-editor-panel: #1e1e1e;
+      --bg-terminal-panel: #141416;
+      --border-color: rgba(255, 255, 255, 0.12);
+      --tab-text-color: #8e8e93;
+      --active-tab-text: #ffffff;
+    }
+
+    :host-context([data-bs-theme="light"]) {
+      --bg-tab-bar: #f5f5f7;
+      --bg-editor-panel: #ffffff;
+      --bg-terminal-panel: #f5f5f7;
+      --border-color: rgba(0, 0, 0, 0.12);
+      --tab-text-color: #6e6e73;
+      --active-tab-text: #000000;
+    }
+
+    .custom-editor-section { background-color: var(--bg-editor-panel); border-color: var(--border-color) !important; }
+    .custom-console-section { border-color: var(--border-color) !important; }
+    .custom-tab-bar { background-color: var(--bg-tab-bar); border-color: var(--border-color) !important; }
+    .custom-terminal-body { background-color: var(--bg-terminal-panel); }
+
+    /* OneCompiler Custom Green Run Button Spec Matching */
+    .run-btn {
+      background-color: #00e676 !important;
+      font-size: 15px;
+      height: 32px;
+      transition: background-color 0.15s ease;
+    }
+    .run-btn:hover { background-color: #00c853 !important; }
+
+    .active-code-tab {
+      background-color: var(--bg-editor-panel);
+      border-top: 2px solid #00e676;
+      color: var(--active-tab-text) !important;
+      font-weight: 600;
+    }
+
+    .tab-btn {
+      color: var(--tab-text-color);
+      border: none !important;
+      background: transparent;
+      padding: 0 15px !important;
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+    }
+    .tab-btn:hover { color: var(--active-tab-text); }
+
+    .active-terminal-tab {
+      color: var(--active-tab-text) !important;
+      border-bottom: 2px solid #00e676 !important;
+      background-color: rgba(255, 255, 255, 0.02) !important;
     }
   `]
 })
@@ -112,8 +206,8 @@ export class AppComponent implements OnInit {
   isRunning: boolean = false;
   errorMessage: string = '';
 
-  // Native theme control state
-  currentTheme: 'light' | 'dark' = 'dark';
+  activeTab: 'input' | 'output' = 'output';
+  currentTheme: 'dark' | 'light' = 'dark';
 
   constructor(
     private compilerService: CompilerService,
@@ -123,9 +217,8 @@ export class AppComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.checkHealth();
-    // Set default dark styling wrapper parameters to html element layer node object model structure mapping engine directly
     this.applyThemeAttribute();
+    this.checkHealth();
   }
 
   toggleTheme() {
@@ -134,7 +227,6 @@ export class AppComponent implements OnInit {
   }
 
   private applyThemeAttribute() {
-    // 🌟 This natively commands Bootstrap 5 to instantly shift colors of all standard components
     this.renderer.setAttribute(this.document.documentElement, 'data-bs-theme', this.currentTheme);
   }
 
@@ -163,10 +255,7 @@ export class AppComponent implements OnInit {
 
     this.isRunning = true;
     this.errorMessage = '';
-    this.stdout = '';
-    this.stderr = '';
-    this.exitCode = -1;
-    this.executionTimeMs = 0;
+    this.activeTab = 'output';
 
     const request: RunRequest = {
       language: this.selectedLanguage,
@@ -176,25 +265,24 @@ export class AppComponent implements OnInit {
 
     this.compilerService.run(request).subscribe({
       next: (response) => {
-        console.log('received response:', response);
         this.stdout = response.stdout;
         this.stderr = response.stderr;
         this.exitCode = response.exitCode;
         this.executionTimeMs = response.executionTimeMs;
         this.isRunning = false;
         this.cdr.detectChanges();
-        this.cdr.markForCheck();
-        if (!response.success && response.message) {
-          this.errorMessage = response.message;
-        }
       },
       error: (error) => {
         this.isRunning = false;
-        this.errorMessage = error.error?.message || 'An error occurred while running the code';
-        this.stderr = JSON.stringify(error.error?.errors || error.message);
-        console.error('Error occurred while running code:', error);
+        this.errorMessage = 'Sandbox execution connection timed out.';
+        this.stderr = error.error?.message || error.message;
       }
     });
+  }
+
+  getSourceFileName(language: string): string {
+    const fileNames: { [key: string]: string } = { cpp: 'Main.cpp', python: 'main.py', java: 'Main.java' };
+    return fileNames[language] || 'main.txt';
   }
 
   private checkHealth() {
@@ -209,7 +297,7 @@ export class AppComponent implements OnInit {
 
   private getDefaultCodeForLang(lang: string): string {
     const templates: { [key: string]: string } = {
-      cpp: `#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}`,
+      cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}`,
       python: `print("Hello, World!")`,
       java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}`
     };
