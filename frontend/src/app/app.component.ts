@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { LanguageSelectorComponent } from './components/language-selector.component';
@@ -83,7 +83,7 @@ export class AppComponent implements OnInit {
   @ViewChild('codeEditor') codeEditor?: CodeEditorComponent;
 
   selectedLanguage: string = 'cpp';
-  code: string = '';
+  code: string = this.getDefaultCodeForLang(this.selectedLanguage);
   input: string = '';
   stdout: string = '';
   stderr: string = '';
@@ -92,7 +92,7 @@ export class AppComponent implements OnInit {
   isRunning: boolean = false;
   errorMessage: string = '';
 
-  constructor(private compilerService: CompilerService) { }
+  constructor(private compilerService: CompilerService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.checkHealth();
@@ -100,11 +100,11 @@ export class AppComponent implements OnInit {
 
   onLanguageChanged(language: string) {
     this.selectedLanguage = language;
-    this.code = '';
     this.stdout = '';
     this.stderr = '';
     this.exitCode = -1;
     this.executionTimeMs = 0;
+    this.code = this.getDefaultCodeForLang(this.selectedLanguage);
   }
 
   onCodeChanged(code: string) {
@@ -142,16 +142,17 @@ export class AppComponent implements OnInit {
         this.exitCode = response.exitCode;
         this.executionTimeMs = response.executionTimeMs;
         this.isRunning = false;
-
+        this.cdr.detectChanges();
+        this.cdr.markForCheck();
         if (!response.success && response.message) {
           this.errorMessage = response.message;
         }
       },
       error: (error) => {
+        console.log('Compilation error:', error);
         this.isRunning = false;
         this.errorMessage = error.error?.message || 'An error occurred while running the code';
         this.stderr = JSON.stringify(error.error?.errors || error.message);
-        console.error('Compilation error:', error);
       }
     });
   }
@@ -166,5 +167,14 @@ export class AppComponent implements OnInit {
         this.errorMessage = 'Cannot connect to the backend server';
       }
     });
+  }
+
+  private getDefaultCodeForLang(lang: string): string {
+    const templates: { [key: string]: string } = {
+      cpp: `#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}`,
+      python: `print("Hello, World!")`,
+      java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}`
+    };
+    return templates[lang] || '';
   }
 }

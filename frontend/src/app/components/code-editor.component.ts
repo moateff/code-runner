@@ -55,7 +55,7 @@ export class CodeEditorComponent implements OnInit, AfterViewInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    // Make sure monaco and the editor are loaded before switching languages
+    // 1. Handle Language Changes safely
     if (this.editor && this.monacoInstance && changes['language']) {
       const model = this.editor.getModel();
       const newLanguage = this.getMonacoLanguage(this.language);
@@ -64,6 +64,19 @@ export class CodeEditorComponent implements OnInit, AfterViewInit, OnChanges {
       // If code property wasn't touched by user, load standard default template
       if (!this.editor.getValue() || this.editor.getValue() === this.getDefaultCodeForLang(changes['language'].previousValue)) {
         this.editor.setValue(this.getDefaultCode());
+        this.codeChanged.emit(this.getDefaultCode()); // 🌟 Emits default code to parent immediately
+      }
+    }
+
+    // 2. 🌟 ADD THIS BLOCK: Handle external modifications to the 'code' Input property
+    if (this.editor && changes['code'] && !changes['code'].isFirstChange()) {
+      const currentExternalValue = changes['code'].currentValue;
+
+      // Prevent infinite value loops by verifying if Monaco isn't already matching it
+      if (this.editor.getValue() !== currentExternalValue) {
+        // If parent passed an empty string or reset token, apply the matching language template instead
+        const fallbackValue = currentExternalValue || this.getDefaultCode();
+        this.editor.setValue(fallbackValue);
       }
     }
   }
