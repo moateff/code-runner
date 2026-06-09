@@ -32,6 +32,34 @@ services:
       retries: 3
       start_period: 10s
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    container_name: compiler-frontend
+
+    ports:
+      - "4200:80"
+
+    environment:
+      NODE_ENV: production
+
+    depends_on:
+      - backend
+
+    networks:
+      - compiler-network
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
 networks:
   compiler-network:
     name: compiler-network
