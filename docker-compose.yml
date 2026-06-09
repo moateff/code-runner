@@ -40,7 +40,7 @@ services:
     container_name: code-runner-frontend
 
     ports:
-      - "4200:80"
+      - "81:80"
 
     environment:
       NODE_ENV: production

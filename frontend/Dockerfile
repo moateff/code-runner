@@ -1,4 +1,3 @@
-# === STAGE 1: Build the Angular App ===
 FROM node:24-alpine AS build
 WORKDIR /app
 

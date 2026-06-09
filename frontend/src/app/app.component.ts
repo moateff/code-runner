@@ -176,6 +176,7 @@ export class AppComponent implements OnInit {
 
     this.compilerService.run(request).subscribe({
       next: (response) => {
+        console.log('received response:', response);
         this.stdout = response.stdout;
         this.stderr = response.stderr;
         this.exitCode = response.exitCode;
@@ -191,6 +192,7 @@ export class AppComponent implements OnInit {
         this.isRunning = false;
         this.errorMessage = error.error?.message || 'An error occurred while running the code';
         this.stderr = JSON.stringify(error.error?.errors || error.message);
+        console.error('Error occurred while running code:', error);
       }
     });
   }
