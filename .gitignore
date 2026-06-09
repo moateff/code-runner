@@ -1,0 +1,40 @@
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# Build & Output
+build/
+dist/
+out-tsc/
+
+# Logs & Artifacts
+*.log
+logs/
+Logs/
+*.tmp
+
+# Cache
+.cache/
+.angular/cache/
+.sass-cache/
+
+# Docker build cache
+docker/cache/
+
+# Misc
+.coverage
+__screenshots__/
+testem.log
