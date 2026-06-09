@@ -65,7 +65,7 @@ services:
       context: ./runners/cpp
       dockerfile: Dockerfile
 
-    image: code-runner/cpp:latest
+    image: cpp-runner:latest
     
     profiles:
       - build-only
@@ -75,7 +75,7 @@ services:
       context: ./runners/python
       dockerfile: Dockerfile
     
-    image: code-runner/python:latest
+    image: python-runner:latest
 
     profiles:
       - build-only
@@ -85,7 +85,7 @@ services:
       context: ./runners/java
       dockerfile: Dockerfile
     
-    image: code-runner/java:latest
+    image: java-runner:latest
 
     profiles:
       - build-only

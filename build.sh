@@ -48,7 +48,7 @@ check_prerequisites() {
 build_images() {
     print_info "Building Docker images..."
     # docker-compose build --no-cache
-    docker-compose build
+    docker-compose --profile build-only build 
     print_info "Images built successfully"
 }
 
