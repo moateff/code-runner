@@ -6,7 +6,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
 
-    container_name: compiler-backend
+    container_name: code-runner-backend
 
     ports:
       - "8080:8080"
@@ -21,7 +21,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
     networks:
-      - compiler-network
+      - code-runner-network
 
     restart: unless-stopped
 
@@ -37,7 +37,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
 
-    container_name: compiler-frontend
+    container_name: code-runner-frontend
 
     ports:
       - "4200:80"
@@ -49,7 +49,7 @@ services:
       - backend
 
     networks:
-      - compiler-network
+      - code-runner-network
 
     restart: unless-stopped
 
@@ -61,6 +61,6 @@ services:
       start_period: 10s
 
 networks:
-  compiler-network:
-    name: compiler-network
+  code-runner-network:
+    name: code-runner-network
     driver: bridge
