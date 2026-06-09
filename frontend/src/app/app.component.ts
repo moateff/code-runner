@@ -27,7 +27,7 @@ import { RunRequest } from './models/run-request';
       <header class="d-flex align-items-center justify-content-between px-3 custom-tab-bar border-bottom" style="height: 50px;">
         <div class="d-flex align-items-center gap-2">
           <span class="text-success fw-bold fs-4">&lt;/&gt;</span>
-          <span class="fw-bold fs-5 tracking-tight text-white font-monospace">OneCompiler</span>
+          <span class="logo fw-bold fs-5 tracking-tight font-monospace">CodeRunner</span>
         </div>
 
         <div class="d-flex align-items-center gap-3">
@@ -137,6 +137,7 @@ import { RunRequest } from './models/run-request';
 
     /* ─── DYNAMIC CLASS HOOK THEME DESIGN VARIABLES ─── */
     :host-context([data-bs-theme="dark"]) {
+      --logo-text-color: #ffffff;
       --bg-tab-bar: #18181c;
       --bg-editor-panel: #1e1e1e;
       --bg-terminal-panel: #141416;
@@ -146,6 +147,7 @@ import { RunRequest } from './models/run-request';
     }
 
     :host-context([data-bs-theme="light"]) {
+      --logo-text-color: #000000;
       --bg-tab-bar: #f5f5f7;
       --bg-editor-panel: #ffffff;
       --bg-terminal-panel: #f5f5f7;
@@ -154,6 +156,8 @@ import { RunRequest } from './models/run-request';
       --active-tab-text: #000000;
     }
 
+
+    .logo-text { color: var(--logo-text-color); }
     .custom-editor-section { background-color: var(--bg-editor-panel); border-color: var(--border-color) !important; }
     .custom-console-section { border-color: var(--border-color) !important; }
     .custom-tab-bar { background-color: var(--bg-tab-bar); border-color: var(--border-color) !important; }

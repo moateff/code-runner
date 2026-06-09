@@ -47,7 +47,8 @@ check_prerequisites() {
 # Build images
 build_images() {
     print_info "Building Docker images..."
-    docker-compose build --no-cache
+    # docker-compose build --no-cache
+    docker-compose build
     print_info "Images built successfully"
 }
 
@@ -70,9 +71,8 @@ show_access_info() {
     print_info "Application is ready!"
     echo ""
     echo "Access the application:"
-    echo "  Frontend:    http://localhost:4200"
-    echo "  Backend API: http://localhost:8080"
-    echo "  Swagger Docs: http://localhost:8080/swagger"
+    echo "  Frontend:    http://localhost:81"
+    echo "  Backend:     http://localhost:8080"
     echo ""
     echo "Useful commands:"
     echo "  View logs:    docker-compose logs -f"

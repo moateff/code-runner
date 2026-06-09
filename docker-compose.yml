@@ -60,6 +60,36 @@ services:
       retries: 3
       start_period: 10s
 
+  runner-cpp:
+    build:
+      context: ./runners/cpp
+      dockerfile: Dockerfile
+
+    image: code-runner/cpp:latest
+    
+    profiles:
+      - build-only
+
+  runner-python:
+    build:
+      context: ./runners/python
+      dockerfile: Dockerfile
+    
+    image: code-runner/python:latest
+
+    profiles:
+      - build-only
+
+  runner-java:
+    build:
+      context: ./runners/java
+      dockerfile: Dockerfile
+    
+    image: code-runner/java:latest
+
+    profiles:
+      - build-only
+
 networks:
   code-runner-network:
     name: code-runner-network

@@ -23,15 +23,14 @@ public class DockerRunnerService : IDockerRunnerService
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        // 1. Check if an environment variable is explicitly set
+        // check if an environment variable is explicitly set
         var dockerUri = Environment.GetEnvironmentVariable("DOCKER_HOST");
 
         if (string.IsNullOrEmpty(dockerUri))
         {
-            // 2. If not set, choose the fallback path based on your current Operating System
             dockerUri = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? "npipe://./pipe/docker_engine"       // 🪟 Default for local Windows development
-                : "unix:///var/run/docker.sock";       // 🐧 Default for Linux / inside a Docker Container
+                ? "npipe://./pipe/docker_engine"       // default for local Windows development
+                : "unix:///var/run/docker.sock";       // default for Linux / inside a Docker Container
         }
 
         _logger.LogInformation("Initializing DockerClient with URI: {Uri}", dockerUri);
@@ -50,23 +49,20 @@ public class DockerRunnerService : IDockerRunnerService
 
         try
         {
-            // Create + start container (idle)
             containerId = await CreateAndStartContainer(language, cancellationToken);
 
-            // Ensure container is actually running (IMPORTANT FIX)
+            // ensure container is actually running
             await EnsureContainerRunning(containerId, cancellationToken);
 
-            // Inject source code into container
+            // inject source code into container
             await CopyFileToContainer(
                 containerId,
                 GetSourceFileName(language),
                 code,
                 cancellationToken);
 
-            // Inject input if needed   
+            // inject input if needed   
             string safeInput = !string.IsNullOrEmpty(input) ? input : "";
-            Console.WriteLine("Input : " + input);
-            Console.WriteLine("Safe Input : " + safeInput);
 
             if (!safeInput.EndsWith("\n"))
             {
@@ -79,8 +75,6 @@ public class DockerRunnerService : IDockerRunnerService
                 safeInput,
                 cancellationToken);
             
-
-            // Execute (safe exec API)
             var result = await ExecuteInContainer(containerId, language, input, cancellationToken);
 
             sw.Stop();
@@ -107,17 +101,29 @@ public class DockerRunnerService : IDockerRunnerService
         }
     }
 
+    // private string BuildCommand(string language)
+    // {
+    //     string inputRedirection = " [ -f /workspace/input.txt ] && < /workspace/input.txt || true";
+
+    //     return language switch
+    //     {
+    //         "python" => $"python3 /workspace/main.py{inputRedirection}",
+    //         "cpp" => $"g++ /workspace/main.cpp -o /workspace/a.out && /workspace/a.out{inputRedirection}",
+    //         "java" => $"javac /workspace/Main.java && java -cp /workspace Main{inputRedirection}",
+    //         _ => throw new ArgumentException("Unsupported language")
+    //     };
+    // }
+
     private string BuildCommand(string language)
     {
-        // Uses a completely clean string token structure that translates perfectly on both OS hosts
-        string inputRedirection = " [ -f /workspace/input.txt ] && < /workspace/input.txt || true";
-
+        // Check if the input file exists, and if so, redirect it into the runner command.
+        // Otherwise, just run the command normally.
         return language switch
         {
-            "python" => $"python3 /workspace/main.py{inputRedirection}",
-            "cpp" => $"g++ /workspace/main.cpp -o /workspace/a.out && /workspace/a.out{inputRedirection}",
-            "java" => $"javac /workspace/Main.java && java -cp /workspace Main{inputRedirection}",
-            _ => throw new ArgumentException("Unsupported language")
+            "python" => "if [ -f /workspace/input.txt ]; then python3 /workspace/main.py < /workspace/input.txt; else python3 /workspace/main.py; fi",
+            "cpp"    => "g++ /workspace/main.cpp -o /workspace/a.out && if [ -f /workspace/input.txt ]; then /workspace/a.out < /workspace/input.txt; else /workspace/a.out; fi",
+            "java"   => "javac /workspace/Main.java && if [ -f /workspace/input.txt ]; then java -cp /workspace Main < /workspace/input.txt; else java -cp /workspace Main; fi",
+            _        => throw new ArgumentException("Unsupported language")
         };
     }
 
@@ -151,13 +157,11 @@ public class DockerRunnerService : IDockerRunnerService
 
 
     private async Task CopyFileToContainer(
-    string containerId,
-    string fileName,
-    string content,
-    CancellationToken ct)
+        string containerId,
+        string fileName,
+        string content,
+        CancellationToken ct)
     {
-        // 🌟 CROSS-PLATFORM FIX: Normalize line breaks to Unix-style LF (\n)
-        // This strips out any harmful Windows carriage returns (\r) before writing to the container
         var normalizedContent = content.Replace("\r\n", "\n");
 
         var ms = new MemoryStream();
@@ -169,7 +173,7 @@ public class DockerRunnerService : IDockerRunnerService
 
         try
         {
-            // Use normalizedContent instead of the raw content string
+            // use normalizedContent instead of the raw content string
             var data = Encoding.UTF8.GetBytes(normalizedContent);
 
             var entry = TarEntry.CreateTarEntry(fileName);
@@ -195,10 +199,10 @@ public class DockerRunnerService : IDockerRunnerService
     }
 
     private async Task<CompilationResult> ExecuteInContainer(
-    string containerId,
-    string language,
-    string input,
-    CancellationToken ct)
+        string containerId,
+        string language,
+        string input,
+        CancellationToken ct)
     {
         var execCreate = await _dockerClient.Exec.ExecCreateContainerAsync(
             containerId,
@@ -206,13 +210,13 @@ public class DockerRunnerService : IDockerRunnerService
             {
                 AttachStdout = true,
                 AttachStderr = true,
-                AttachStdin = false, // 🌟 Changed to false: We are redirecting from input.txt file now!
+                AttachStdin = false,
                 Tty = false,
                 Cmd = new[] { "bash", "-c", BuildCommand(language) }
             },
             ct);
 
-        // Open the one-way output stream socket channel safely
+        // open the one-way output stream socket channel safely
         var stream = await _dockerClient.Exec.StartAndAttachContainerExecAsync(
             execCreate.ID,
             false,
@@ -222,10 +226,7 @@ public class DockerRunnerService : IDockerRunnerService
         var stderr = new StringBuilder();
         var buffer = new byte[4096];
 
-        // 🌟 REMOVED: All the conditional if(input) stream.WriteAsync blocks are gone.
-        // The container reads everything it needs straight out of its filesystem now.
-
-        // Read execution outputs directly via the buffer loop
+        // read execution outputs directly via the buffer loop
         while (true)
         {
             var result = await stream.ReadOutputAsync(buffer, 0, buffer.Length, ct);
@@ -241,7 +242,7 @@ public class DockerRunnerService : IDockerRunnerService
                 stderr.Append(text);
         }
 
-        // Inspect the specific EXEC session state rather than the global container state
+        // inspect the specific EXEC session state rather than the global container state
         var execInspect = await _dockerClient.Exec.InspectContainerExecAsync(execCreate.ID, ct);
 
         return new CompilationResult
@@ -273,66 +274,6 @@ public class DockerRunnerService : IDockerRunnerService
         throw new TimeoutException("Container did not reach running state");
     }
 
-    //private async Task<CompilationResult> WaitForContainer(
-    //    string containerId,
-    //    CancellationToken ct)
-    //{
-    //    using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-    //    timeout.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds));
-
-    //    try
-    //    {
-    //        await _dockerClient.Containers.WaitContainerAsync(containerId, timeout.Token);
-    //    }
-    //    catch
-    //    {
-    //        await SafeKill(containerId);
-
-    //        return new CompilationResult
-    //        {
-    //            Success = false,
-    //            ExitCode = -1,
-    //            Stderr = "Execution timeout"
-    //        };
-    //    }
-
-    //    var inspect = await _dockerClient.Containers.InspectContainerAsync(containerId);
-
-    //    var (stdout, stderr) = await ReadLogs(containerId);
-
-    //    return new CompilationResult
-    //    {
-    //        Success = inspect.State.ExitCode == 0,
-    //        ExitCode = inspect.State.ExitCode == 0 ? 0 : -1,
-    //        Stdout = stdout,
-    //        Stderr = stderr
-    //    };
-    //}
-
-    //private async Task<(string stdout, string stderr)> ReadLogs(string containerId)
-    //{
-    //    var stream = await _dockerClient.Containers.GetContainerLogsAsync(
-    //        containerId,
-    //        false,
-    //        new ContainerLogsParameters
-    //        {
-    //            ShowStdout = true,
-    //            ShowStderr = true,
-    //            Follow = false,
-    //            Timestamps = false
-    //        });
-
-    //    using (stream)
-    //    {
-    //        var result = await stream.ReadOutputToEndAsync(CancellationToken.None);
-
-    //        return (
-    //            result.stdout ?? string.Empty,
-    //            result.stderr ?? string.Empty
-    //        );
-    //    }
-    //}
-
     private string GetImage(string language) => language switch
     {
         "cpp" => "cpp-runner",
@@ -349,18 +290,6 @@ public class DockerRunnerService : IDockerRunnerService
         _ => throw new ArgumentException("Unsupported language")
     };
 
-
-    //private async Task SafeKill(string containerId)
-    //{
-    //    try
-    //    {
-    //        await _dockerClient.Containers.KillContainerAsync(
-    //            containerId,
-    //            new ContainerKillParameters());
-    //    }
-    //    catch { }
-    //}
-
     private async Task SafeRemoveContainer(string containerId)
     {
         try
@@ -371,14 +300,4 @@ public class DockerRunnerService : IDockerRunnerService
         }
         catch { }
     }
-
-    //private void Cleanup(string dir)
-    //{
-    //    try
-    //    {
-    //        if (Directory.Exists(dir))
-    //            Directory.Delete(dir, true);
-    //    }
-    //    catch { }
-    //}
 }
