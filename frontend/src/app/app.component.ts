@@ -136,6 +136,7 @@ export class AppComponent implements OnInit {
 
     this.compilerService.run(request).subscribe({
       next: (response) => {
+        console.log('Received response from backend:', response);
         this.stdout = response.stdout;
         this.stderr = response.stderr;
         this.exitCode = response.exitCode;

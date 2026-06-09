@@ -14,10 +14,12 @@ export class CompilerService {
   constructor(private http: HttpClient) { }
 
   run(request: RunRequest): Observable<RunResponse> {
+    console.log('Running code with request:', request);
     return this.http.post<RunResponse>(`${this.apiUrl}/run`, request);
   }
 
   getHealth(): Observable<any> {
+    console.log('Checking health of compiler service');
     return this.http.get(`${this.apiUrl}/health`);
   }
 }
