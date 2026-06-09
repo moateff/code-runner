@@ -4,17 +4,17 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   selector: 'app-language-selector',
   standalone: true,
   template: `
-    <div class="mb-3">
-      <label for="language" class="form-label">Language</label>
-      <select 
+    <div class="form-floating mb-2">
+      <select
         id="language"
-        class="form-select" 
+        class="form-select fw-semibold"
         [value]="selectedLanguage"
         (change)="onLanguageChange($event)">
-        <option value="cpp">C++</option>
-        <option value="python">Python</option>
-        <option value="java">Java</option>
+        <option value="cpp">C++ (GCC 13)</option>
+        <option value="python">Python (3.11)</option>
+        <option value="java">Java (OpenJDK)</option>
       </select>
+      <label for="language" class="fw-bold text-primary"><i class="bi bi-cpu me-1"></i>Compiler Engine</label>
     </div>
   `
 })

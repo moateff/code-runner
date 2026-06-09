@@ -1,31 +1,29 @@
-import { Component, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef, AfterViewInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewInit, OnChanges, SimpleChanges } from '@angular/core';
 import monacoLoader from '@monaco-editor/loader';
 
 @Component({
   selector: 'app-code-editor',
   standalone: true,
   template: `
-    <div class="mb-3">
-      <label class="form-label">Code Editor</label>
-      <div #editorContainer class="border rounded" style="height: 400px; width: 100%;"></div>
+    <div class="mb-2">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="text-secondary small fw-semibold d-flex align-items-center gap-1">
+          <i class="bi bi-code-slash"></i> Workspace Source Code
+        </span>
+      </div>
+      <div #editorContainer class="border rounded shadow-inner overflow-hidden" style="height: 420px; width: 100%;"></div>
     </div>
-  `,
-  styles: [`
-    :host {
-      display: block;
-    }
-  `]
+  `
 })
 export class CodeEditorComponent implements AfterViewInit, OnChanges {
   @Input() language: string = 'cpp';
   @Input() code: string = '';
+  @Input() theme: 'light' | 'dark' = 'dark'; // 🌟 Accepts global application mode state values
   @Output() codeChanged = new EventEmitter<string>();
 
   @ViewChild('editorContainer') editorContainer?: ElementRef;
   private editor: any;
   private monacoInstance: any;
-
-
 
   ngAfterViewInit() {
     if (!this.editorContainer) return;
@@ -36,12 +34,13 @@ export class CodeEditorComponent implements AfterViewInit, OnChanges {
       this.editor = monaco.editor.create(this.editorContainer!.nativeElement, {
         value: this.code || this.getDefaultCode(),
         language: this.getMonacoLanguage(this.language),
-        theme: 'vs-dark',
+        theme: this.theme === 'dark' ? 'vs-dark' : 'vs', // 🌟 Sets Monaco matching template canvas look
         automaticLayout: true,
         minimap: { enabled: false },
         fontSize: 14,
-        tabSize: 2,
-        wordWrap: 'on'
+        tabSize: 4,
+        wordWrap: 'on',
+        padding: { top: 8, bottom: 8 }
       });
 
       this.editor.onDidChangeModelContent(() => {
@@ -52,6 +51,12 @@ export class CodeEditorComponent implements AfterViewInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    // Dynamically adjust Monaco Theme canvas view layout rules during runtime switches
+    if (this.editor && this.monacoInstance && changes['theme']) {
+      const monacoThemeName = changes['theme'].currentValue === 'dark' ? 'vs-dark' : 'vs';
+      this.monacoInstance.editor.setTheme(monacoThemeName);
+    }
+
     if (this.editor && this.monacoInstance && changes['language']) {
       const model = this.editor.getModel();
       const newLanguage = this.getMonacoLanguage(this.language);
@@ -59,16 +64,14 @@ export class CodeEditorComponent implements AfterViewInit, OnChanges {
 
       if (!this.editor.getValue() || this.editor.getValue() === this.getDefaultCodeForLang(changes['language'].previousValue)) {
         this.editor.setValue(this.getDefaultCode());
-        this.codeChanged.emit(this.getDefaultCode()); // 🌟 Emits default code to parent immediately
+        this.codeChanged.emit(this.getDefaultCode());
       }
     }
 
     if (this.editor && changes['code'] && !changes['code'].isFirstChange()) {
       const currentExternalValue = changes['code'].currentValue;
-
       if (this.editor.getValue() !== currentExternalValue) {
-        const fallbackValue = currentExternalValue || this.getDefaultCode();
-        this.editor.setValue(fallbackValue);
+        this.editor.setValue(currentExternalValue || this.getDefaultCode());
       }
     }
   }
@@ -78,11 +81,7 @@ export class CodeEditorComponent implements AfterViewInit, OnChanges {
   }
 
   private getMonacoLanguage(language: string): string {
-    const languageMap: { [key: string]: string } = {
-      cpp: 'cpp',
-      python: 'python',
-      java: 'java'
-    };
+    const languageMap: { [key: string]: string } = { cpp: 'cpp', python: 'python', java: 'java' };
     return languageMap[language] || 'plaintext';
   }
 

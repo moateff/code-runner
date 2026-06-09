@@ -7,16 +7,17 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [FormsModule, CommonModule],
   template: `
-    <div class="mb-3">
-      <label for="input" class="form-label">Input (stdin)</label>
-      <textarea 
+    <div class="d-flex flex-column h-100">
+      <label for="input" class="form-label fw-semibold text-secondary small d-flex align-items-center gap-1 mb-2">
+        <i class="bi bi-keyboard-fill"></i> Provide Execution Parameters (stdin)
+      </label>
+      <textarea
         id="input"
-        class="form-control"
+        class="form-control flex-grow-1 font-monospace p-3 border rounded shadow-inner"
         [value]="input"
-        (change)="onInputChange($event)"
-        placeholder="Enter input here..."
-        rows="4"
-        style="font-family: monospace;"></textarea>
+        (input)="onInputChange($event)"
+        placeholder="Type test inputs here, then click Run..."
+        style="font-size: 13px; min-height: 420px; resize: none;"></textarea>
     </div>
   `
 })
