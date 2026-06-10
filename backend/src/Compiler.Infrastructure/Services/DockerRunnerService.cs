@@ -101,19 +101,6 @@ public class DockerRunnerService : IDockerRunnerService
         }
     }
 
-    // private string BuildCommand(string language)
-    // {
-    //     string inputRedirection = " [ -f /workspace/input.txt ] && < /workspace/input.txt || true";
-
-    //     return language switch
-    //     {
-    //         "python" => $"python3 /workspace/main.py{inputRedirection}",
-    //         "cpp" => $"g++ /workspace/main.cpp -o /workspace/a.out && /workspace/a.out{inputRedirection}",
-    //         "java" => $"javac /workspace/Main.java && java -cp /workspace Main{inputRedirection}",
-    //         _ => throw new ArgumentException("Unsupported language")
-    //     };
-    // }
-
     private string BuildCommand(string language)
     {
         // Check if the input file exists, and if so, redirect it into the runner command.

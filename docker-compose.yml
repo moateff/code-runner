@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   backend:
+    image: code-runner-backend
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -33,6 +34,7 @@ services:
       start_period: 10s
 
   frontend:
+    image: code-runner-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
