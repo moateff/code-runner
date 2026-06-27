@@ -28,8 +28,8 @@ WORKDIR /app
 
 # Install Docker CLI
 
-RUN apt-get update && \
-apt-get install -y docker.io && \
+RUN apt-get update --fix-missing && \
+apt-get install -y --no-install-recommends docker.io && \
 rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/publish .

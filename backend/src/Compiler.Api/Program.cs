@@ -68,6 +68,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+
+//app.Use(async (context, next) =>
+//{
+//    if (context.Request.Headers.ContainsKey("Access-Control-Request-Private-Network"))
+//        context.Response.Headers.Append("Access-Control-Allow-Private-Network", "true");
+//    await next();
+//});
 app.UseCors("AllowAll");
 
 app.MapHealthChecks("/health");
