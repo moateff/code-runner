@@ -6,11 +6,11 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   template: `
     <select
       class="form-select border-0 font-monospace fw-bold shadow-none text-center py-0 custom-select"
-      style="height: 32px; font-size: 14px; border-radius: 6px; width: 115px; cursor: pointer;"
+      style="height: 32px; font-size: 13px; border-radius: 6px; width: 105px; cursor: pointer;"
       [value]="selectedLanguage"
       (change)="onLanguageChange($event)">
       <option value="cpp">C++</option>
-      <option value="python">Python 3</option>
+      <option value="python">Python</option>
       <option value="java">Java</option>
     </select>
   `,
@@ -18,6 +18,12 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
     .custom-select {
       background-color: var(--bs-secondary-bg);
       color: #3498db !important;
+    }
+    @media (min-width: 576px) {
+      .custom-select {
+        font-size: 14px;
+        width: 115px;
+      }
     }
   `]
 })

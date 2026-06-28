@@ -8,21 +8,32 @@ import { CommonModule } from '@angular/common';
   imports: [FormsModule, CommonModule],
   template: `
     <div class="d-flex flex-column h-100">
-      <div class="text-secondary small font-monospace mb-2 fs-6"><i class="bi bi-keyboard"></i> Input (stdin):</div>
+      <div class="text-secondary small font-monospace mb-2 fs-6 d-none d-md-block">
+        <i class="bi bi-keyboard"></i> Input (stdin):
+      </div>
       <textarea
-        class="form-control flex-grow-1 font-monospace p-3 custom-textarea"
+        class="form-control flex-grow-1 font-monospace p-2 p-sm-3 custom-textarea"
         [value]="input"
         (input)="onInputChange($event)"
         placeholder="Type test strings here..."
-        style="font-size: 15px; resize: none;"></textarea>
+        style="resize: none;"></textarea>
     </div>
   `,
   styles: [`
     :host { display: block; height: 100%; }
+
     .custom-textarea {
       background-color: var(--bs-body-bg) !important;
       color: var(--bs-body-color) !important;
       border: 1px solid var(--bs-border-color);
+      border-radius: 6px;
+      font-size: 14px !important;
+    }
+
+    @media (min-width: 768px) {
+      .custom-textarea {
+        font-size: 15px !important;
+      }
     }
   `]
 })
